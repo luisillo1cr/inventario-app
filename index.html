@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Inventario Asulatina</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#212529" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="assets/icon-192.png" />
+
+  <!-- Bootstrap y estilos propios -->
+  <link rel="stylesheet" href="assets/bootstrap.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Barra superior -->
+  <nav class="navbar navbar-dark bg-dark">
+    <div class="container-fluid">
+      <span class="navbar-brand mb-0 h1">Inventario ASULATINA</span>
+      <button id="btnDescargar" class="btn btn-outline-light btn-sm">
+        Descargar Excel
+      </button>
+    </div>
+  </nav>
+
+  <!-- Contenedor principal -->
+  <main class="container mt-4">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Gestión de Inventario</span>
+        <button
+          class="btn btn-primary btn-sm"
+          data-bs-toggle="modal"
+          data-bs-target="#modalNuevo"
+        >
+          Nuevo Registro
+        </button>
+      </div>
+
+      <div class="card-body">
+        <div class="mb-3">
+          <label for="inputExcel" class="form-label">
+            Cargar inventario desde Excel (plantilla Asulatina)
+          </label>
+          <input
+            type="file"
+            id="inputExcel"
+            class="form-control"
+            accept=".xlsx,.xls"
+          />
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-striped table-bordered" id="tablaInventario">
+            <thead class="table-dark">
+              <tr>
+                <th>Código</th>
+                <th>Producto</th>
+                <th>Existencia</th>
+                <th>Físico</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal para nuevo registro -->
+  <div class="modal fade" id="modalNuevo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Nuevo producto</h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Cerrar"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <form id="formNuevo" autocomplete="off">
+            <div class="mb-3">
+              <label class="form-label" for="codigo">Código</label>
+              <input type="text" id="codigo" class="form-control" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="producto">Producto</label>
+              <input type="text" id="producto" class="form-control" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="existencia">Existencia</label>
+              <input
+                type="number"
+                id="existencia"
+                class="form-control"
+                required
+                min="0"
+              />
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="fisico">Físico</label>
+              <input
+                type="number"
+                id="fisico"
+                class="form-control"
+                required
+                min="0"
+              />
+            </div>
+            <button type="submit" class="btn btn-success w-100">
+              Guardar
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast de notificaciones -->
+  <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3">
+    <div id="toastApp" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header toast-header-success">
+        <strong class="me-auto">Inventario</strong>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="toast"
+          aria-label="Cerrar"
+        ></button>
+      </div>
+      <div class="toast-body"></div>
+    </div>
+  </div>
+
+  <!-- JS: Bootstrap, XLSX y lógica de la app -->
+  <script src="assets/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

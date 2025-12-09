@@ -1,0 +1,54 @@
+/* ==========================================================
+   ESTILOS GENERALES DE LA APP DE INVENTARIO
+   Todo estilo propio debe estar aquí, nunca en los HTML.
+   ========================================================== */
+
+body {
+  background-color: #f8f9fa;
+}
+
+/* Barra superior */
+.navbar-brand {
+  font-weight: 600;
+}
+
+/* Tarjetas principales */
+.card {
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.08);
+}
+
+/* Tabla de inventario */
+#tablaInventario th,
+#tablaInventario td {
+  vertical-align: middle;
+  font-size: 0.875rem;
+}
+
+/* Contenedor del toast */
+#toastContainer {
+  z-index: 1100;
+}
+
+/* Header del toast: estados */
+.toast-header-success {
+  background-color: #198754;
+  color: #ffffff;
+}
+
+.toast-header-error {
+  background-color: #dc3545;
+  color: #ffffff;
+}
+
+/* Ajustes para pantallas pequeñas */
+@media (max-width: 576px) {
+  .navbar-brand {
+    font-size: 1rem;
+  }
+
+  #tablaInventario th,
+  #tablaInventario td {
+    font-size: 0.8rem;
+    padding: 0.35rem;
+  }
+}
