@@ -4,7 +4,7 @@
    - Reporte de versión al cliente
    ========================================================== */
 
-const SW_VERSION = "v1.0.2";
+const SW_VERSION = "v1.0.3";
 
 const CACHE_NAME = `inventario-web-${SW_VERSION}`;
 
@@ -70,3 +70,4 @@ self.addEventListener("message", (event) => {
     });
   }
 });
+
