@@ -4,7 +4,7 @@
    - Reporte de versión al cliente
    ========================================================== */
 
-const SW_VERSION = "v1.0.1";
+const SW_VERSION = "v1.0.2";
 
 const CACHE_NAME = `inventario-web-${SW_VERSION}`;
 
@@ -15,7 +15,9 @@ const RECURSOS_ESTATICOS = [
   "./app.js",
   "./manifest.json",
   "./assets/bootstrap.min.css",
-  "./assets/bootstrap.bundle.min.js"
+  "./assets/bootstrap.bundle.min.js",
+  "./assets/xlsx.full.min.js",
+  "./assets/favicon.png"
 ];
 
 self.addEventListener("install", (event) => {
@@ -50,10 +52,6 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-/**
- * Responde al cliente con la versión actual cuando recibe
- * el mensaje GET_VERSION.
- */
 self.addEventListener("message", (event) => {
   if (!event.data || event.data.type !== "GET_VERSION") {
     return;

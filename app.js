@@ -1,10 +1,13 @@
 /* ==========================================================
    APP DE INVENTARIO ASULATINA
-   - Bootstrap 5 + XLSX
+   - Bootstrap 5 + XLSX local
    - PWA lista para GitHub Pages
    - Inventario editable + persistencia en localStorage
    - Filtro de búsqueda
-   - Lectura de versión del Service Worker
+   - Configuración de encabezado
+   - Confirmación de borrado y limpieza total
+   - Resumen de inventario
+   - Version del sistema desde Service Worker
    ========================================================== */
 
 /* ==========================================================
@@ -12,23 +15,32 @@
    ========================================================== */
 
 // Estado principal del inventario en memoria.
-// Cada item tiene la forma:
-// { codigo: string, producto: string, existencia: number, fisico: number }
 let inventario = [];
 
-// Claves para almacenamiento local
+// Claves de almacenamiento local
 const STORAGE_KEY_INVENTARIO = "inventario_asulatina_datos";
 const STORAGE_KEY_TEMA = "inventario_asulatina_tema";
+const STORAGE_KEY_CONFIG = "inventario_asulatina_config";
 
 // Filtro de texto actual
 let filtroTexto = "";
+
+// Configuración de encabezado
+const CONFIG_POR_DEFECTO = {
+  preparadoPor: "DANIEL FLORES",
+  bodega: "0018  BODEGA PEREZ ZELEDON"
+};
+let configuracion = { ...CONFIG_POR_DEFECTO };
 
 // Elementos del DOM
 const tablaBody = document.querySelector("#tablaInventario tbody");
 const inputExcel = document.getElementById("inputExcel");
 const btnDescargar = document.getElementById("btnDescargar");
 const btnNuevo = document.getElementById("btnNuevo");
+const btnLimpiarTodo = document.getElementById("btnLimpiarTodo");
+const btnConfig = document.getElementById("btnConfig");
 const inputBusqueda = document.getElementById("inputBusqueda");
+const resumenInventario = document.getElementById("resumenInventario");
 
 const formProducto = document.getElementById("formProducto");
 const modalProductoElement = document.getElementById("modalProducto");
@@ -41,6 +53,11 @@ const inputProducto = document.getElementById("producto");
 const inputExistencia = document.getElementById("existencia");
 const inputFisico = document.getElementById("fisico");
 
+const formConfig = document.getElementById("formConfig");
+const inputConfigPreparadoPor = document.getElementById("configPreparadoPor");
+const inputConfigBodega = document.getElementById("configBodega");
+const modalConfigElement = document.getElementById("modalConfig");
+
 const toastElement = document.getElementById("toastApp");
 const toastBody = toastElement.querySelector(".toast-body");
 const toggleTema = document.getElementById("toggleTema");
@@ -52,19 +69,16 @@ const toastApp = new bootstrap.Toast(toastElement, {
   autohide: true
 });
 const modalProducto = bootstrap.Modal.getOrCreateInstance(modalProductoElement);
+const modalConfig = bootstrap.Modal.getOrCreateInstance(modalConfigElement);
 
 /* ==========================================================
    UTILITARIOS GENERALES
    ========================================================== */
 
-/**
- * Convierte un valor a número, manejando comas, puntos y vacíos.
- */
 function normalizarNumero(valor) {
   if (typeof valor === "number") {
     return valor;
   }
-
   if (typeof valor === "string") {
     const limpio = valor.trim();
     if (limpio === "") {
@@ -74,14 +88,9 @@ function normalizarNumero(valor) {
     const convertido = Number(estandarizado);
     return Number.isNaN(convertido) ? 0 : convertido;
   }
-
   return 0;
 }
 
-/**
- * Muestra un mensaje de notificación en el toast.
- * esError = true aplica estilo de error.
- */
 function mostrarToast(mensaje, esError = false) {
   const header = toastElement.querySelector(".toast-header");
   if (esError) {
@@ -96,9 +105,6 @@ function mostrarToast(mensaje, esError = false) {
   toastApp.show();
 }
 
-/**
- * Devuelve fecha dd/mm/yyyy para encabezado.
- */
 function formatearFechaCorta(fecha) {
   const d = fecha.getDate().toString().padStart(2, "0");
   const m = (fecha.getMonth() + 1).toString().padStart(2, "0");
@@ -106,9 +112,6 @@ function formatearFechaCorta(fecha) {
   return `${d}/${m}/${y}`;
 }
 
-/**
- * Devuelve fecha yyyy-mm-dd para nombre de archivo.
- */
 function formatearFechaArchivo(fecha) {
   const d = fecha.getDate().toString().padStart(2, "0");
   const m = (fecha.getMonth() + 1).toString().padStart(2, "0");
@@ -120,9 +123,6 @@ function formatearFechaArchivo(fecha) {
    TEMA CLARO / OSCURO
    ========================================================== */
 
-/**
- * Aplica el tema indicado al body y al switch.
- */
 function aplicarTema(tema) {
   if (tema === "oscuro") {
     document.body.classList.add("tema-oscuro");
@@ -139,9 +139,6 @@ function aplicarTema(tema) {
   }
 }
 
-/**
- * Carga el tema desde localStorage, o usa claro por defecto.
- */
 function cargarTemaInicial() {
   const temaGuardado = localStorage.getItem(STORAGE_KEY_TEMA);
   if (temaGuardado === "oscuro" || temaGuardado === "claro") {
@@ -151,7 +148,6 @@ function cargarTemaInicial() {
   }
 }
 
-// Manejo de cambios en el switch de tema
 if (toggleTema) {
   toggleTema.addEventListener("change", () => {
     const tema = toggleTema.checked ? "oscuro" : "claro";
@@ -168,9 +164,6 @@ if (toggleTema) {
    PERSISTENCIA EN LOCALSTORAGE
    ========================================================== */
 
-/**
- * Guarda el inventario actual en localStorage.
- */
 function guardarInventarioLocal() {
   try {
     localStorage.setItem(STORAGE_KEY_INVENTARIO, JSON.stringify(inventario));
@@ -179,20 +172,13 @@ function guardarInventarioLocal() {
   }
 }
 
-/**
- * Carga el inventario desde localStorage, si existe.
- */
 function cargarInventarioLocal() {
   try {
     const texto = localStorage.getItem(STORAGE_KEY_INVENTARIO);
-    if (!texto) {
-      return;
-    }
+    if (!texto) return;
 
     const datos = JSON.parse(texto);
-    if (!Array.isArray(datos)) {
-      return;
-    }
+    if (!Array.isArray(datos)) return;
 
     inventario = datos.map((item) => ({
       codigo: (item.codigo ?? "").toString().trim(),
@@ -205,17 +191,40 @@ function cargarInventarioLocal() {
   }
 }
 
+function guardarConfigLocal() {
+  try {
+    localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(configuracion));
+  } catch (error) {
+    console.error("No se pudo guardar la configuración en localStorage:", error);
+  }
+}
+
+function cargarConfigLocal() {
+  try {
+    const texto = localStorage.getItem(STORAGE_KEY_CONFIG);
+    if (!texto) {
+      configuracion = { ...CONFIG_POR_DEFECTO };
+      return;
+    }
+    const datos = JSON.parse(texto);
+    configuracion = {
+      preparadoPor: (datos.preparadoPor ?? CONFIG_POR_DEFECTO.preparadoPor)
+        .toString()
+        .trim(),
+      bodega: (datos.bodega ?? CONFIG_POR_DEFECTO.bodega).toString().trim()
+    };
+  } catch (error) {
+    console.error("No se pudo cargar la configuración desde localStorage:", error);
+    configuracion = { ...CONFIG_POR_DEFECTO };
+  }
+}
+
 /* ==========================================================
    FILTRO DE BÚSQUEDA
    ========================================================== */
 
-/**
- * Indica si un item coincide con el filtro de texto actual.
- */
 function coincideFiltro(item) {
-  if (!filtroTexto) {
-    return true;
-  }
+  if (!filtroTexto) return true;
 
   const termino = filtroTexto.toLowerCase();
 
@@ -239,19 +248,32 @@ if (inputBusqueda) {
 }
 
 /* ==========================================================
-   RENDERIZADO DE TABLA
+   RENDERIZADO DE TABLA Y RESUMEN
    ========================================================== */
 
-/**
- * Dibuja la tabla completa en función del estado y el filtro actuales.
- */
+function renderResumen() {
+  if (!resumenInventario) return;
+
+  let totalFilas = 0;
+  let sumaExistencia = 0;
+
+  inventario.forEach((item) => {
+    if (!coincideFiltro(item)) return;
+    totalFilas += 1;
+    sumaExistencia += normalizarNumero(item.existencia);
+  });
+
+  resumenInventario.textContent =
+    totalFilas === 0
+      ? "Sin registros."
+      : `Registros: ${totalFilas} · Existencia total: ${sumaExistencia}`;
+}
+
 function renderTabla() {
   tablaBody.innerHTML = "";
 
   inventario.forEach((item, index) => {
-    if (!coincideFiltro(item)) {
-      return;
-    }
+    if (!coincideFiltro(item)) return;
 
     const fila = document.createElement("tr");
 
@@ -282,16 +304,17 @@ function renderTabla() {
 
     tablaBody.appendChild(fila);
   });
+
+  renderResumen();
 }
 
-/**
- * Maneja las acciones de los botones "Editar" y "Eliminar" dentro de la tabla.
- */
+/* ==========================================================
+   ACCIONES EN LA TABLA
+   ========================================================== */
+
 tablaBody.addEventListener("click", (event) => {
   const boton = event.target.closest("button[data-action]");
-  if (!boton) {
-    return;
-  }
+  if (!boton) return;
 
   const accion = boton.getAttribute("data-action");
   const indice = Number(boton.getAttribute("data-index"));
@@ -301,6 +324,11 @@ tablaBody.addEventListener("click", (event) => {
   }
 
   if (accion === "eliminar") {
+    const confirmar = window.confirm(
+      "¿Deseas eliminar este registro del inventario?"
+    );
+    if (!confirmar) return;
+
     inventario.splice(indice, 1);
     guardarInventarioLocal();
     renderTabla();
@@ -328,16 +356,9 @@ tablaBody.addEventListener("click", (event) => {
    CARGA DE EXCEL
    ========================================================== */
 
-/**
- * Carga un archivo de Excel con la plantilla de Asulatina y
- * reemplaza el inventario en memoria.
- */
 inputExcel.addEventListener("change", (evento) => {
   const archivo = evento.target.files[0];
-
-  if (!archivo) {
-    return;
-  }
+  if (!archivo) return;
 
   const lector = new FileReader();
 
@@ -346,13 +367,11 @@ inputExcel.addEventListener("change", (evento) => {
       const datos = new Uint8Array(e.target.result);
       const workbook = XLSX.read(datos, { type: "array" });
 
-      // Se usa la primera hoja
       const nombreHoja = workbook.SheetNames[0];
       const hoja = workbook.Sheets[nombreHoja];
 
-      // range: 13 (fila 14, 0-based) donde está el encabezado "Codigo, Producto..."
       const opciones = {
-        range: 13,
+        range: 13, // Fila 14 (0-based)
         defval: ""
       };
 
@@ -365,26 +384,27 @@ inputExcel.addEventListener("change", (evento) => {
           const existencia = normalizarNumero(fila["Existencia"]);
           const fisico = normalizarNumero(fila["Físico"]);
 
-          return {
-            codigo,
-            producto,
-            existencia,
-            fisico
-          };
+          return { codigo, producto, existencia, fisico };
         })
         .filter((fila) => fila.codigo !== "" || fila.producto !== "");
 
       guardarInventarioLocal();
       renderTabla();
-      mostrarToast("Archivo de inventario cargado correctamente");
+      mostrarToast(
+        `Archivo cargado correctamente. Registros leídos: ${inventario.length}`
+      );
     } catch (error) {
       console.error(error);
       mostrarToast("Error leyendo el archivo de Excel", true);
+    } finally {
+      // Permite volver a cargar el mismo archivo más tarde
+      inputExcel.value = "";
     }
   };
 
   lector.onerror = () => {
     mostrarToast("No se pudo leer el archivo seleccionado", true);
+    inputExcel.value = "";
   };
 
   lector.readAsArrayBuffer(archivo);
@@ -394,9 +414,6 @@ inputExcel.addEventListener("change", (evento) => {
    FORMULARIO CREAR / EDITAR PRODUCTO
    ========================================================== */
 
-/**
- * Preparar modal para un nuevo registro.
- */
 btnNuevo.addEventListener("click", () => {
   indiceProductoInput.value = "-1";
   formProducto.reset();
@@ -405,27 +422,56 @@ btnNuevo.addEventListener("click", () => {
   modalProducto.show();
 });
 
-/**
- * Maneja el envío del formulario. Si indiceProducto = -1 se crea un
- * nuevo registro, en caso contrario se actualiza el existente.
- */
 formProducto.addEventListener("submit", (evento) => {
   evento.preventDefault();
 
+  const codigo = inputCodigo.value.trim();
+  const producto = inputProducto.value.trim();
+  const existencia = normalizarNumero(inputExistencia.value);
+  const fisico = normalizarNumero(inputFisico.value);
   const indice = Number(indiceProductoInput.value);
 
-  const nuevoItem = {
-    codigo: inputCodigo.value.trim(),
-    producto: inputProducto.value.trim(),
-    existencia: normalizarNumero(inputExistencia.value),
-    fisico: normalizarNumero(inputFisico.value)
-  };
+  if (codigo === "" || producto === "") {
+    mostrarToast("Código y producto son obligatorios", true);
+    return;
+  }
+  if (existencia < 0 || fisico < 0) {
+    mostrarToast("Existencia y físico no pueden ser negativos", true);
+    return;
+  }
+
+  const indiceExistente = inventario.findIndex(
+    (item, idx) =>
+      idx !== indice && item.codigo.toString().trim() === codigo
+  );
 
   if (indice === -1 || Number.isNaN(indice)) {
-    inventario.push(nuevoItem);
-    mostrarToast("Producto agregado al inventario");
+    if (indiceExistente !== -1) {
+      const sobrescribir = window.confirm(
+        "Ya existe un producto con ese código. ¿Deseas sobrescribirlo?"
+      );
+      if (sobrescribir) {
+        inventario[indiceExistente] = { codigo, producto, existencia, fisico };
+        mostrarToast("Producto actualizado (código existente)");
+      } else {
+        mostrarToast("No se guardó el producto porque el código ya existe", true);
+        return;
+      }
+    } else {
+      inventario.push({ codigo, producto, existencia, fisico });
+      mostrarToast("Producto agregado al inventario");
+    }
   } else {
-    inventario[indice] = nuevoItem;
+    if (indiceExistente !== -1) {
+      const sobrescribirEdicion = window.confirm(
+        "Ya existe otro producto con ese código. ¿Deseas usar ese código de todas formas?"
+      );
+      if (!sobrescribirEdicion) {
+        mostrarToast("No se guardaron los cambios por código duplicado", true);
+        return;
+      }
+    }
+    inventario[indice] = { codigo, producto, existencia, fisico };
     mostrarToast("Producto actualizado");
   }
 
@@ -435,20 +481,59 @@ formProducto.addEventListener("submit", (evento) => {
 });
 
 /* ==========================================================
+   BOTÓN LIMPIAR INVENTARIO
+   ========================================================== */
+
+btnLimpiarTodo.addEventListener("click", () => {
+  const confirmacion = window.confirm(
+    "Esta acción eliminará todo el inventario cargado o ingresado manualmente. ¿Deseas continuar?"
+  );
+  if (!confirmacion) return;
+
+  inventario = [];
+  guardarInventarioLocal();
+  renderTabla();
+  mostrarToast("Inventario limpiado completamente");
+});
+
+/* ==========================================================
+   CONFIGURACIÓN DE ENCABEZADO
+   ========================================================== */
+
+btnConfig.addEventListener("click", () => {
+  inputConfigPreparadoPor.value = configuracion.preparadoPor;
+  inputConfigBodega.value = configuracion.bodega;
+  modalConfig.show();
+});
+
+formConfig.addEventListener("submit", (evento) => {
+  evento.preventDefault();
+
+  const preparado = inputConfigPreparadoPor.value.trim();
+  const bodega = inputConfigBodega.value.trim();
+
+  if (preparado === "" || bodega === "") {
+    mostrarToast("Ambos campos de configuración son obligatorios", true);
+    return;
+  }
+
+  configuracion.preparadoPor = preparado;
+  configuracion.bodega = bodega;
+  guardarConfigLocal();
+  modalConfig.hide();
+  mostrarToast("Configuración guardada");
+});
+
+/* ==========================================================
    DESCARGA DE EXCEL CON PLANTILLA
    ========================================================== */
 
-/**
- * Genera un archivo de Excel con el encabezado y la tabla,
- * siguiendo la estructura de la plantilla que compartiste.
- */
 btnDescargar.addEventListener("click", () => {
   try {
     const hoy = new Date();
     const fechaTexto = formatearFechaCorta(hoy);
     const fechaArchivo = formatearFechaArchivo(hoy);
 
-    // Datos para la tabla
     const datosTabla = inventario.map((item) => ({
       Codigo: item.codigo,
       Producto: item.producto,
@@ -456,7 +541,6 @@ btnDescargar.addEventListener("click", () => {
       "Físico": item.fisico
     }));
 
-    // Encabezado basado en la plantilla
     const encabezado = [
       [],
       [],
@@ -465,12 +549,12 @@ btnDescargar.addEventListener("click", () => {
       [],
       [null, "ASULATINA"],
       [`al :${fechaTexto}`],
-      ["Preparado por: ", "DANIEL FLORES"],
+      ["Preparado por: ", configuracion.preparadoPor],
       ["Fecha: ", hoy],
       [],
       [null, "Existencias del Inventario"],
       [],
-      ["Bodega", "0018  BODEGA PEREZ ZELEDON"],
+      ["Bodega", configuracion.bodega],
       ["Codigo", "Producto", "Existencia", "Físico"]
     ];
 
@@ -495,17 +579,13 @@ btnDescargar.addEventListener("click", () => {
 });
 
 /* ==========================================================
-   SERVICE WORKER / PWA
+   SERVICE WORKER / PWA Y VERSIÓN DEL SISTEMA
    ========================================================== */
 
-/**
- * Escucha mensajes provenientes del Service Worker para conocer
- * la versión activa.
- */
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.addEventListener("message", (event) => {
     if (event.data && event.data.type === "VERSION" && swVersionElement) {
-      swVersionElement.textContent = `Service Worker: ${event.data.version}`;
+      swVersionElement.textContent = `Version del sistema: ${event.data.version}`;
     }
   });
 }
@@ -517,7 +597,7 @@ if ("serviceWorker" in navigator) {
       .then(() => {
         if (swVersionElement) {
           swVersionElement.textContent =
-            "Version del sistema: registrado, leyendo versión...";
+            "Version del sistema: registrando...";
         }
 
         function solicitarVersion() {
@@ -538,7 +618,8 @@ if ("serviceWorker" in navigator) {
       .catch((error) => {
         console.error("Error registrando el service worker:", error);
         if (swVersionElement) {
-          swVersionElement.textContent = "Version del sistema: error al registrar";
+          swVersionElement.textContent =
+            "Version del sistema: error al registrar";
         }
       });
   });
@@ -551,5 +632,6 @@ if ("serviceWorker" in navigator) {
    ========================================================== */
 
 cargarTemaInicial();
+cargarConfigLocal();
 cargarInventarioLocal();
 renderTabla();
