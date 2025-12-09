@@ -58,6 +58,9 @@ const inputConfigPreparadoPor = document.getElementById("configPreparadoPor");
 const inputConfigBodega = document.getElementById("configBodega");
 const modalConfigElement = document.getElementById("modalConfig");
 
+const modalConfirmLimpiarElement = document.getElementById("modalConfirmLimpiar");
+const btnConfirmarLimpiar = document.getElementById("btnConfirmarLimpiar");
+
 const toastElement = document.getElementById("toastApp");
 const toastBody = toastElement.querySelector(".toast-body");
 const toggleTema = document.getElementById("toggleTema");
@@ -70,6 +73,9 @@ const toastApp = new bootstrap.Toast(toastElement, {
 });
 const modalProducto = bootstrap.Modal.getOrCreateInstance(modalProductoElement);
 const modalConfig = bootstrap.Modal.getOrCreateInstance(modalConfigElement);
+const modalConfirmLimpiar = modalConfirmLimpiarElement
+  ? bootstrap.Modal.getOrCreateInstance(modalConfirmLimpiarElement)
+  : null;
 
 /* ==========================================================
    UTILITARIOS GENERALES
@@ -397,7 +403,6 @@ inputExcel.addEventListener("change", (evento) => {
       console.error(error);
       mostrarToast("Error leyendo el archivo de Excel", true);
     } finally {
-      // Permite volver a cargar el mismo archivo más tarde
       inputExcel.value = "";
     }
   };
@@ -485,16 +490,34 @@ formProducto.addEventListener("submit", (evento) => {
    ========================================================== */
 
 btnLimpiarTodo.addEventListener("click", () => {
-  const confirmacion = window.confirm(
-    "Esta acción eliminará todo el inventario cargado o ingresado manualmente. ¿Deseas continuar?"
-  );
-  if (!confirmacion) return;
+  if (!modalConfirmLimpiar) {
+    const confirmacion = window.confirm(
+      "Esta acción eliminará todo el inventario cargado o ingresado manualmente. ¿Deseas continuar?"
+    );
+    if (!confirmacion) return;
 
-  inventario = [];
-  guardarInventarioLocal();
-  renderTabla();
-  mostrarToast("Inventario limpiado completamente");
+    inventario = [];
+    guardarInventarioLocal();
+    renderTabla();
+    mostrarToast("Inventario limpiado completamente");
+    return;
+  }
+
+  modalConfirmLimpiar.show();
 });
+
+if (btnConfirmarLimpiar) {
+  btnConfirmarLimpiar.addEventListener("click", () => {
+    inventario = [];
+    guardarInventarioLocal();
+    renderTabla();
+    mostrarToast("Inventario limpiado completamente");
+
+    if (modalConfirmLimpiar) {
+      modalConfirmLimpiar.hide();
+    }
+  });
+}
 
 /* ==========================================================
    CONFIGURACIÓN DE ENCABEZADO
