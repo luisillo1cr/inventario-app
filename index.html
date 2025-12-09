@@ -239,6 +239,43 @@
     </div>
   </div>
 
+  <!-- Modal de confirmación para limpiar inventario -->
+  <div class="modal fade" id="modalConfirmLimpiar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Confirmar limpieza</h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Cerrar"
+          ></button>
+        </div>
+        <div class="modal-body">
+          Esta acción eliminará todo el inventario cargado o ingresado manualmente
+          en este dispositivo. ¿Deseas continuar?
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn btn-danger"
+            id="btnConfirmarLimpiar"
+          >
+            Sí, limpiar inventario
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast de notificaciones -->
   <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3">
     <div
@@ -267,5 +304,3 @@
   <script src="app.js"></script>
 </body>
 </html>
-
-
