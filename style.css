@@ -1,20 +1,60 @@
 /* ==========================================================
    ESTILOS GENERALES DE LA APP DE INVENTARIO
-   Todo estilo propio debe estar aquí, nunca en los HTML.
+   Todo el CSS propio va aquí, nunca en los HTML.
    ========================================================== */
+
+html,
+body {
+  height: 100%;
+}
 
 body {
   background-color: #f8f9fa;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Barra superior */
+/* Main ocupa el espacio central, footer al fondo */
+main {
+  flex: 1 0 auto;
+}
+
+.app-footer {
+  flex-shrink: 0;
+  padding: 0.75rem 0;
+  background-color: #ffffff;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  margin-top: 1.5rem;
+}
+
+.app-footer a {
+  text-decoration: none;
+}
+
+/* Card principal */
+.card {
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.08);
+}
+
+/* Barra superior y contenido */
 .navbar-brand {
   font-weight: 600;
 }
 
-/* Tarjetas principales */
-.card {
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.08);
+.navbar .form-check-label {
+  color: #f8f9fa;
+  font-size: 0.875rem;
+}
+
+/* Botón descargar en móvil ocupa todo el ancho */
+.navbar-download-btn {
+  width: 100%;
+}
+
+@media (min-width: 576px) {
+  .navbar-download-btn {
+    width: auto;
+  }
 }
 
 /* Tabla de inventario */
@@ -24,12 +64,17 @@ body {
   font-size: 0.875rem;
 }
 
-/* Contenedor del toast */
+/* Contenedor con scroll vertical para la tabla */
+.tabla-inventario-contenedor {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* Toast */
 #toastContainer {
   z-index: 1100;
 }
 
-/* Header del toast: estados */
 .toast-header-success {
   background-color: #198754;
   color: #ffffff;
@@ -40,7 +85,19 @@ body {
   color: #ffffff;
 }
 
-/* Ajustes para pantallas pequeñas */
+/* Animación suave de toast */
+.toast-animacion {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+}
+
+.toast-animacion.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Ajustes en pantallas pequeñas */
 @media (max-width: 576px) {
   .navbar-brand {
     font-size: 1rem;
@@ -51,4 +108,86 @@ body {
     font-size: 0.8rem;
     padding: 0.35rem;
   }
+
+  .tabla-inventario-contenedor {
+    max-height: 60vh;
+  }
+}
+
+/* ==========================================================
+   TEMA OSCURO
+   Se activa agregando la clase .tema-oscuro al body
+   ========================================================== */
+
+body.tema-oscuro {
+  background-color: #121212;
+  color: #f8f9fa;
+}
+
+/* Card en tema oscuro */
+body.tema-oscuro .card {
+  background-color: #1f1f1f;
+  color: #f8f9fa;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
+}
+
+/* Tabla en tema oscuro */
+body.tema-oscuro #tablaInventario {
+  color: #f8f9fa;
+}
+
+body.tema-oscuro #tablaInventario thead {
+  background-color: #000000;
+}
+
+body.tema-oscuro .table-striped tbody tr:nth-of-type(odd) {
+  --bs-table-accent-bg: #1f1f1f;
+  color: #f8f9fa;
+}
+
+body.tema-oscuro .table-striped tbody tr:nth-of-type(even) {
+  background-color: #181818;
+  color: #f8f9fa;
+}
+
+body.tema-oscuro .table-bordered > :not(caption) > * {
+  border-color: #343a40;
+}
+
+/* Formularios y modales en oscuro */
+body.tema-oscuro .modal-content {
+  background-color: #1f1f1f;
+  color: #f8f9fa;
+}
+
+body.tema-oscuro .form-control {
+  background-color: #1f1f1f;
+  color: #f8f9fa;
+  border-color: #495057;
+}
+
+body.tema-oscuro .form-control:focus {
+  background-color: #1f1f1f;
+  color: #f8f9fa;
+}
+
+/* Footer en modo oscuro */
+body.tema-oscuro .app-footer {
+  background-color: #000000;
+  border-top-color: #343a40;
+  color: #f8f9fa;
+}
+
+body.tema-oscuro .app-footer a {
+  color: #0d6efd;
+}
+
+/* Toast en oscuro */
+body.tema-oscuro .toast {
+  background-color: #1f1f1f;
+}
+
+/* Modo claro explícito por si se quiere ajustar en futuro */
+body.tema-claro {
+  /* Actualmente el modo claro hereda los estilos generales */
 }

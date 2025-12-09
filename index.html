@@ -11,7 +11,7 @@
   <meta name="theme-color" content="#212529" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="apple-touch-icon" href="assets/icon-192.png" />
+  <link rel="apple-touch-icon" href="assets/favicon.png" />
 
   <!-- Bootstrap y estilos propios -->
   <link rel="stylesheet" href="assets/bootstrap.min.css" />
@@ -22,41 +22,67 @@
   <!-- Barra superior -->
   <nav class="navbar navbar-dark bg-dark">
     <div class="container-fluid">
-      <span class="navbar-brand mb-0 h1">Inventario ASULATINA</span>
-      <button id="btnDescargar" class="btn btn-outline-light btn-sm">
-        Descargar Excel
-      </button>
+      <div class="d-flex flex-column flex-md-row w-100 justify-content-between align-items-start align-items-md-center gap-2">
+        <span class="navbar-brand mb-0 h1">Inventario ASULATINA</span>
+
+        <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2">
+          <div class="form-check form-switch mb-0 text-light">
+            <input class="form-check-input" type="checkbox" id="toggleTema" />
+            <label class="form-check-label" for="toggleTema">Oscuro</label>
+          </div>
+
+          <button
+            id="btnDescargar"
+            class="btn btn-outline-light btn-sm navbar-download-btn"
+          >
+            Descargar Excel
+          </button>
+        </div>
+      </div>
     </div>
   </nav>
 
-  <!-- Contenedor principal -->
-  <main class="container mt-4">
+  <!-- Contenido principal -->
+  <main class="container mt-4 flex-fill">
     <div class="card">
       <div class="card-header d-flex justify-content-between align-items-center">
         <span>Gestión de Inventario</span>
-        <button
-          class="btn btn-primary btn-sm"
-          data-bs-toggle="modal"
-          data-bs-target="#modalNuevo"
-        >
-          Nuevo Registro
+        <button class="btn btn-primary btn-sm" id="btnNuevo">
+          Nuevo registro
         </button>
       </div>
 
       <div class="card-body">
-        <div class="mb-3">
-          <label for="inputExcel" class="form-label">
-            Cargar inventario desde Excel (plantilla Asulatina)
-          </label>
-          <input
-            type="file"
-            id="inputExcel"
-            class="form-control"
-            accept=".xlsx,.xls"
-          />
+        <!-- Carga de Excel + búsqueda -->
+        <div class="row g-3 mb-3">
+          <div class="col-12 col-md-6">
+            <label for="inputExcel" class="form-label">
+              Cargar inventario desde Excel (plantilla Asulatina)
+            </label>
+            <input
+              type="file"
+              id="inputExcel"
+              class="form-control"
+              accept=".xlsx,.xls"
+            />
+          </div>
+
+          <div class="col-12 col-md-6 align-self-end">
+            <label for="inputBusqueda" class="form-label">
+              Buscar en inventario
+            </label>
+            <input
+              type="text"
+              id="inputBusqueda"
+              class="form-control"
+              placeholder="Filtrar por código, producto, existencia o físico"
+              autocomplete="off"
+            />
+          </div>
         </div>
 
-        <div class="table-responsive">
+        <!-- Tabla con scroll vertical -->
+        <div class="table-responsive tabla-inventario-contenedor">
           <table class="table table-striped table-bordered" id="tablaInventario">
             <thead class="table-dark">
               <tr>
@@ -74,12 +100,26 @@
     </div>
   </main>
 
-  <!-- Modal para nuevo registro -->
-  <div class="modal fade" id="modalNuevo" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="container text-center">
+      <small>
+        © 2025
+        <a href="https://github.com/luisillo1cr" target="_blank" rel="noopener">
+          luisillo1cr
+        </a>
+        ·
+        <span id="swVersion">Service Worker: sin registrar</span>
+      </small>
+    </div>
+  </footer>
+
+  <!-- Modal para crear/editar producto -->
+  <div class="modal fade" id="modalProducto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Nuevo producto</h5>
+          <h5 class="modal-title" id="modalProductoTitulo">Nuevo producto</h5>
           <button
             type="button"
             class="btn-close"
@@ -88,7 +128,10 @@
           ></button>
         </div>
         <div class="modal-body">
-          <form id="formNuevo" autocomplete="off">
+          <form id="formProducto" autocomplete="off">
+            <!-- Índice interno (para edición) -->
+            <input type="hidden" id="indiceProducto" value="-1" />
+
             <div class="mb-3">
               <label class="form-label" for="codigo">Código</label>
               <input type="text" id="codigo" class="form-control" required />
@@ -117,7 +160,11 @@
                 min="0"
               />
             </div>
-            <button type="submit" class="btn btn-success w-100">
+            <button
+              type="submit"
+              id="btnGuardarProducto"
+              class="btn btn-success w-100"
+            >
               Guardar
             </button>
           </form>
@@ -128,7 +175,13 @@
 
   <!-- Toast de notificaciones -->
   <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3">
-    <div id="toastApp" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+    <div
+      id="toastApp"
+      class="toast toast-animacion"
+      role="alert"
+      aria-live="assertive"
+      aria-atomic="true"
+    >
       <div class="toast-header toast-header-success">
         <strong class="me-auto">Inventario</strong>
         <button

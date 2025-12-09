@@ -1,9 +1,12 @@
 /* ==========================================================
-   SERVICE WORKER BÁSICO PARA PWA
-   Cachea los archivos estáticos mínimos para uso offline.
+   SERVICE WORKER PARA PWA DE INVENTARIO
+   - Cacheo básico de recursos estáticos
+   - Reporte de versión al cliente
    ========================================================== */
 
-const CACHE_NAME = "inventario-asulatina-v1";
+const SW_VERSION = "v1.0.1";
+
+const CACHE_NAME = `inventario-web-${SW_VERSION}`;
 
 const RECURSOS_ESTATICOS = [
   "./",
@@ -26,12 +29,12 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((nombres) =>
       Promise.all(
         nombres.map((nombre) => {
-          if (nombre !== CACHE_NAME) {
+          if (nombre.startsWith("inventario-web-") && nombre !== CACHE_NAME) {
             return caches.delete(nombre);
           }
           return null;
         })
-      )
+      ).then(() => self.clients.claim())
     )
   );
 });
@@ -45,4 +48,27 @@ self.addEventListener("fetch", (event) => {
       return fetch(event.request);
     })
   );
+});
+
+/**
+ * Responde al cliente con la versión actual cuando recibe
+ * el mensaje GET_VERSION.
+ */
+self.addEventListener("message", (event) => {
+  if (!event.data || event.data.type !== "GET_VERSION") {
+    return;
+  }
+
+  const mensaje = {
+    type: "VERSION",
+    version: SW_VERSION
+  };
+
+  if (event.source && typeof event.source.postMessage === "function") {
+    event.source.postMessage(mensaje);
+  } else {
+    self.clients.matchAll({ type: "window" }).then((clientes) => {
+      clientes.forEach((cliente) => cliente.postMessage(mensaje));
+    });
+  }
 });
